@@ -1,0 +1,17 @@
+---
+title: "Topics in Microeconomics - Exercise 5"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# Local env setup
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(stargazer)
+```
+
+## Exercise 5
+```{r}
+# Some code here
+```
+
