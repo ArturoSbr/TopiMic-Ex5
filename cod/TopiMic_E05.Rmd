@@ -6,12 +6,105 @@ output: pdf_document
 ```{r setup, include=FALSE}
 # Local env setup
 knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(ggplot2)
 library(tidyverse)
 library(stargazer)
 ```
 
 ## Exercise 5
-```{r}
-# Some code here
-```
 
+###  Political Selection and Economic Policy
+
+#### a)
+_Why is it not obvious how politician quality would map into policy outcomes?_
+
+The relationship between quality and policy outcomes is hard to quantify because we cannot perfectly observe
+a politician's quality. For instance, the traits that voters associate to political quality may be correlated
+with other factors that could influence a politician's ideology. As an example, assuming that wealthy individuals
+prefer right-wing policies, then a candidate regarded as a high quality politician due to their level of education
+may also favor right-wing policies because their education is related to their level of wealth.
+
+In general, the traits that voters associate with a politician's quality may be related to the kind of policies
+implemented by those politicians.
+
+#### b)
+_How does the author motivate the focus on public spending and fiscal policy? What other outcomes would be
+interesting to analyze?_
+
+The author studies these two outcomes because of their potential trade-off. In practice, left-wing politicians tend to
+favor public spending, while right-wing politician tend to favor fiscal health. In theory, a low-quality politician
+will implement their favorite policies at the expense of other objectives. For example, liberals would increase public
+spending and disregard fiscal health, while conservatives would cut public spending to improve fiscal health.
+
+One of the main results of this article is that, in contrast to low-quality politicians, high-quality candidates are
+capable of implementing their preferred policies without compromising policies at the opposite end of the ideological
+spectrum.
+
+#### c)
+_Suppose that a researcher would just regress a policy outcome on the quality of politicians. What kind of problems
+would this kind of regression involve?_
+
+The model would not account for omitted variable bias due to unobserved voter preferences or reverse causality due to
+underlying relationships, such as politicians' traits being related to their preferred policies. Going back
+to the example of a highly educated and wealthy politician, they may be inclined to reduce public spending to improve
+fiscal health. This reduction in public goods provision would affect certain populations and the model would yield
+a negative relationship between perceived quality and policy outcome.
+
+_To deal with the endogeneity issues, the paper uses an identification strategy like the close elections regression
+discontinuity designs that we have already seen in this class. Why is it difficult to conduct a conventional RDD in the
+context of the study? Briefly summarize the idea of the identification strategy that the paper uses._
+
+The author compares close elections that involve two different types of politicians from the same party. Meriläinen
+calculates the difference between the seat share of a political type against its expected seat share and uses it as an
+instrumental variable. This methodology allows the author to regress policy outcome $Y$ in municipality $m$ at time $t$
+on the instrumented share of competent politicians.
+
+When constructing the instrumental variables, the first step involves comparing candidates involved in close elections.
+The author defines a cutoff value as the average of the within-party vote shares from the last-elected candidate and
+the first-non-elected candidate. All candidates with distance from election within $\varepsilon$ are considered to be
+involved in _close elections_.
+
+Running a common RDD is not straightforward because there is no well-defined running variable because close elections
+can happen withing multiple parties at the same time. The author quotes an extreme example where two similar-quality
+politicians get different election outcomes in different parties. Bot of them are within a similar margin from election,
+yet one of the was elected in party A, while the other was not in party B.
+
+#### d)
+_Why might education be an imperfect indicator of politician quality? What alternative measures does the paper use?
+What are the advantages and disadvantages of these? If there were no data limitations, what kind of measure do you
+think would be an ideal measure of politician quality and why?_
+
+Education could be related to a politician's ideology due to unobserved factors that shape politicians' ideologies and
+are therefore related to political outcomes. For example, education could be related to social status, and thus, a high
+level of education could cause the politician to be conservative through this channel.
+
+The author uses data on candidates to regress their income on observable factors, such as age, sector and educations.
+The estimated error term from this regression is used as a measure for the unobservable traits that impact income and
+therefore candidate quality.
+
+If there were no limitations, a good measure for candidate quality would be their leverage ability. An observable
+measure of this variable would be how many policies a given politician has been able to pass in previous years when
+facing opposition from other politicians.
+
+#### e)
+_How do different politician qualities affect economic policies? What kind of explanation does the author offer for
+the fact that different qualities may matter for policy in different ways?_
+
+In the first part of the paper, Meriläinen shows that high-quality candidates are able to increase spending without
+compromising the municipality's financial health, or likewise, improve financial health without reducing public goods
+provision. In the second part, Meriläinen uses survey data on candidates' ideologies to suggest that more-educated
+politicians tend to favor left wing policies (government growth), while high-income and experienced politicians tend to
+favor fiscal health.
+
+### 2. The Political Resource Curse
+
+#### a) 
+
+#### b) 
+
+#### c) 
+
+#### d) 
+
+#### e) 
