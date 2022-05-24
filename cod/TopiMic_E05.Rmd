@@ -11,9 +11,18 @@ library(ggplot2)
 library(tidyverse)
 library(ivreg)
 library(rdrobust)
+library(sandwich)
+library(lmtest)
+library(kableExtra)
 ```
 
 ## Exercise 5
+
+These solutions were written by:
+
+1. Lothar Mateo
+2. Francisco Velázquez
+3. Arturo Soberón
 
 ###  Political Selection and Economic Policy
 
@@ -23,7 +32,7 @@ _Why is it not obvious how politician quality would map into policy outcomes?_
 The relationship between quality and policy outcomes is hard to quantify because we cannot perfectly observe
 a politician's quality. For instance, the traits that voters associate to political quality may be correlated
 with other factors that could influence a politician's ideology. As an example, assuming that wealthy individuals
-prefer right-wing policies, then a candidate regarded as a high quality politician due to their level of education
+prefer right-wing policies, then a candidate regarded as a high-quality politician due to their level of education
 may also favor right-wing policies because their education is related to their level of wealth.
 
 In general, the traits that voters associate with a politician's quality may be related to the kind of policies
@@ -38,7 +47,7 @@ favor public spending, while right-wing politician tend to favor fiscal health. 
 will implement their favorite policies at the expense of other objectives. For example, liberals would increase public
 spending and disregard fiscal health, while conservatives would cut public spending to improve fiscal health.
 
-One of the main results of this article is that, in contrast to low-quality politicians, high-quality candidates are
+One of the main results of the article is that, in contrast to low-quality politicians, high-quality candidates are
 capable of implementing their preferred policies without compromising policies at the opposite end of the ideological
 spectrum.
 
@@ -98,17 +107,26 @@ provision. In the second part, Meriläinen uses survey data on candidates' ideol
 politicians tend to favor left wing policies (government growth), while high-income and experienced politicians tend to
 favor fiscal health.
 
+\newpage
 ### 2. The Political Resource Curse
 
-#### a) _What are these predictions made by the theoretical model this paper is based on?_
-1. 
-2. 
-3. 
-4. 
-5. 
-6. 
+#### a)
+_What are these predictions made by the theoretical model this paper is based on?_
 
-#### b) _RDD plots_
+1. Voters are less likely to notice if the incumbent steals resources when the budget size increases.
+2. A larger budget size decreases the average ability of candidates challenging the incumbent because political rents
+are more valuable to low-ability candidates.
+3. An incumbent facing lower-quality competitors can misbehave more without hurting their reelection prospects.
+4. An increase of government resources increases the reelection probability of the incumbent.
+5. Electoral punishment is weaker when an incumbent receives a larger budget.
+6. Higher transfers increase corruption more if the opponents have lower levels of education.
+
+\newpage
+#### b)
+_RDD plots_
+
+All of the following plots suggest that receiving additional funds from the government increases the broad corruption
+measure in municipalities around the population cutoff.
 
 _(i) Linear polynomial_
 ```{r}
@@ -132,7 +150,7 @@ rdplot(y = d$broad, x = d$popnorm, c = 0, p = 1,
 The linear model suggests that broad corruption increases after the cutoff. However, the residuals do not seem to be
 normally distributed, especially on the right side of the plot. I personally think the linear model is not a good fit.
 
-Based on the plot, the Average Treatment Effect on the Treated (ATT) is an increase in broad corruption of around 12
+Based on the plot, the Local Average Treatment Effect (LATE) is an increase in broad corruption of around 12
 percentage points.
 
 _(ii) Quadratic polynomial_
@@ -148,8 +166,9 @@ The fit of the quadratic model is adequate on the left-hand side of the plot. Ho
 do to the pronounced curve of the curve on the right. This happens because of the dispersion of the corruption measure
 around `popnorm = 2000` (it ranges between 0.6 and 0.9).
 
-Based on the plot, the ATT is an increase in broad corruption of around 15 percentage points.
+Based on the plot, the LATE is an increase in broad corruption of around 15 percentage points.
 
+\newpage
 _(iii) Cubic polynomial_
 ```{r}
 # Generate bins
@@ -166,22 +185,96 @@ corruption measure seems to increase after the cutoff.
 
 In accordance to the quadratic model, the ATT is an increase in broad corruption of around 15 percentage points.
 
-#### c) _Table 9_
+\newpage
+#### c)
+_Replicate Table 9_
 
-_(i) Control for `pop`, `pop_2`, `pop_3`, `i.term`, and `i.regions`; instrument `fpm` with `fpm_hat`. Write a loop for
-`opp_college`, `opp_yschool`, and `reele_inc` as dependent variables. Clustered standar errors by `id_city`._
+_(i) Education of opponents and reelection of incumbent
+```{r}
+# Filter data according to seven thresholds
+d <- d2 %>% 
+  filter(pop <= 50940)
 
-_(ii) How do these regressions differ from Figure 3? What specification could be a more credible one and why?_
+# Dependent variables
+Y <- c('opp_college', 'opp_yschool', 'reele_inc')
 
-_(iii) What happens if we don't use controls? Do you think it is necessary to include the covariates?_
+# Columns to dummies
+d$term <- as.factor(d$term)
+d$regions <- as.factor(d$regions)
+
+# General formula
+f <- '~ pop + pop_2 + pop_3 + term + regions + fpm | pop + pop_2 + pop_3 + term + regions + fpm_hat'
+
+# Initialize empty dataframe to store coefficients in
+res <- matrix(nrow = 2, ncol = 0) %>% as.data.frame()
+
+# For loop for all variables
+for (y in Y) {
+  # Model
+  m <- ivreg(
+    formula = paste(y, f),
+    data = d
+  )
+  
+  # Clustered SE
+  m <- coeftest(x = m, vcov = vcovCL, cluster = ~id_city)
+  
+  # Pull effect of fpm
+  m <- m['fpm',]
+  
+  # Append to dataframe
+  res <- res %>% 
+    mutate(
+      !!y := c(m['Estimate'], m['Std. Error']) %>% unname()
+    )
+}
+
+# Rename columns
+names(res) <- c('College','Years of schooling','Incumbent reelection')
+
+# Results
+res %>% 
+  round(3) %>% 
+  kbl()
+```
+
+_(ii) Interpretation_
+The regression results indicate that an increase in FPM leads to a decrease in the share of opponents with a college
+degree, a reduction in the average years of schooling of opponents', and an increase in the probability that the
+incumbent will be reelected.
+
+With all other values held constant, a one-unit increase in FPM causes:
+1. A 0.8 percentage point decrease in the share of opponents with a college degree.
+2. A decrease in the average years of schooling of opponents of 0.077 years.
+3. An increase in the probability of reelection of 1.2 percentage points.
+
+These results agree with those presented in Figure 3 because, according to the RDDs, having a slightly larger 
+population count (and hence getting more funds) has effects in the same directions as the IV regressions. The main
+difference is that Figure 3 uses RDD with population as a running variable, whereas Table 9 uses an IV approach
+to measure the same effect (receiving more funds).
+
+_(iii) Removing controls_
+We consider that the controls are necessary because of the inclusion of population. If we were to remove population,
+then the models would be interpreted as an increase in FPM without regard of a municipality's population count.
+By construction of the Brazilian system, municipalities with larger populations receive larger cuts of the state's
+budget, and hence, the marginal effects of an increase in population count should differ depending on the bracket.
 
 
 #### d) _Histogram of the running variable_
 
-The running variable is skewed to the right. It seems that the population is avoiding the cutoff and choosing to be
-on its left side. This invalidates a sharp RDD design.
+The distribution of the running variable is skewed to the right. Normally, we would be worried that municipalities
+can strategically manipulate their reported population counts. However, since greater populations translate to greater
+FPM coefficients, then it seems that this is the actual distribution at the cutoff.
 
-We can also run RDDs on the controls with the intention to show that the table is balanced around the cutoff.
+We think this distribution does not invalidate the RDD because it would not make sense for municipalities to
+under-report their population counts because that would translate to receiving less federal funds.
+
+Plotting the distribution of the running variable is a good strategy to determine if the underlying population
+is strategically manipulating its reports in order to become eligible to receive the funds from the policy.
+
+In addition to studying the distribution of the running variable, we can run RDDs on the controls with the intent to
+show that the table is balanced around the cutoff. That is, all variables except for the treatment are balanced, which
+is evidence that the assignment of the treatment is as good as random around the cutoff.
 ```{r}
 ggplot(data = d2, mapping = aes(x = popnorm)) +
   geom_histogram(bins = 30, fill = 'skyblue') +
@@ -193,11 +286,22 @@ ggplot(data = d2, mapping = aes(x = popnorm)) +
 ```
 
 #### e)
-(i) What potential problems could there be with studies that exploit this kind of RDD set-ups? How have researchers dealt with this?
+_(i) What potential problems could there be with studies that exploit this kind of RDD set-ups?_
+According to Cattaneo et al., when there are multiple cutoffs in a policy, using an RDD to analyze the local
+treatment effect for all buckets in a single model may not be able to capture all the information available in the
+multiple cutoffs. In particular, compound treatments and sorting are what causes normal RDDs to not be able to fully
+retrieve the causal effect of a policy on an outcome.
 
+_(ii) How to deal with multiple population thresholds?_
+In order to deal with compound policies, researches should look for other settings where the confounding policies
+change but the policy of interest does not. This can be done with a difference-in-discontinuity design.
 
-(ii) One difficulty (but not one that one could not overcome!) is that there are multiple population thresholds. There are basically two ways researchers can deal with this- --what are these?
+Sorting creates bias in RDD estimates because the distribution of covariates differs on both sides of the cutoff.
+Therefore, the solution proposed by Eggers et al. is to measure these covariates and their relationship to the outcome
+of interest at the threshold. In other words, researchers must control for these covariates in order to make the
+RDD look like a typical randomized experiment.
 
-
-(iii) Can you think of any population-based policies that would apply in the Mexican context?
-
+_(iii) Can you think of any population-based policies that would apply in the Mexican context?_
+Mexican families are given cash transfers if their children are enrolled in school, are not malnourished and receive
+regular check-ups. The running variable could be households' Capital Income, as families become eligible for these
+transfers if they fall below the minimum well-being line.
