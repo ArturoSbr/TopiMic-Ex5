@@ -9,7 +9,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(haven)
 library(ggplot2)
 library(tidyverse)
-library(stargazer)
+library(ivreg)
+library(rdrobust)
 ```
 
 ## Exercise 5
@@ -99,12 +100,104 @@ favor fiscal health.
 
 ### 2. The Political Resource Curse
 
-#### a) 
+#### a) _What are these predictions made by the theoretical model this paper is based on?_
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
 
-#### b) 
+#### b) _RDD plots_
 
-#### c) 
+_(i) Linear polynomial_
+```{r}
+# Read data sets
+d1 <- read_dta('../dat/AER_smallsample.dta')
+d2 <- read_dta('../dat/AER_largesample.dta')
 
-#### d) 
+# Data for plots
+d <- d1 %>% 
+  filter(abs(popnorm) <= 3500) %>% 
+  select(broad, popnorm)
 
-#### e) 
+# Linear model
+rdplot(y = d$broad, x = d$popnorm, c = 0, p = 1,
+       title = 'Linear RDD',
+       x.label = 'Normalized Population',
+       y.label = 'Broad corruption',
+       col.dots = 'skyblue',
+       col.lines = 'coral')
+```
+The linear model suggests that broad corruption increases after the cutoff. However, the residuals do not seem to be
+normally distributed, especially on the right side of the plot. I personally think the linear model is not a good fit.
+
+Based on the plot, the Average Treatment Effect on the Treated (ATT) is an increase in broad corruption of around 12
+percentage points.
+
+_(ii) Quadratic polynomial_
+```{r}
+rdplot(y = d$broad, x = d$popnorm, c = 0, p = 2,
+       title = 'Quadratic RDD',
+       x.label = 'Normalized Population',
+       y.label = 'Broad corruption',
+       col.dots = 'skyblue',
+       col.lines = 'coral')
+```
+The fit of the quadratic model is adequate on the left-hand side of the plot. However, the effect seems exaggerated
+do to the pronounced curve of the curve on the right. This happens because of the dispersion of the corruption measure
+around `popnorm = 2000` (it ranges between 0.6 and 0.9).
+
+Based on the plot, the ATT is an increase in broad corruption of around 15 percentage points.
+
+_(iii) Cubic polynomial_
+```{r}
+# Generate bins
+rdplot(y = d$broad, x = d$popnorm, c = 0, p = 3,
+       title = 'Cubic RDD',
+       x.label = 'Normalized Population',
+       y.label = 'Broad corruption',
+       col.dots = 'skyblue',
+       col.lines = 'coral')
+```
+The left-hand side of the plot now smoothly follows the points in the graph. The right-hand side of the plot did not
+change substantially from the quadratic fit, as there is no point of inflection. As with all previous models, the
+corruption measure seems to increase after the cutoff.
+
+In accordance to the quadratic model, the ATT is an increase in broad corruption of around 15 percentage points.
+
+#### c) _Table 9_
+
+_(i) Control for `pop`, `pop_2`, `pop_3`, `i.term`, and `i.regions`; instrument `fpm` with `fpm_hat`. Write a loop for
+`opp_college`, `opp_yschool`, and `reele_inc` as dependent variables. Clustered standar errors by `id_city`._
+
+_(ii) How do these regressions differ from Figure 3? What specification could be a more credible one and why?_
+
+_(iii) What happens if we don't use controls? Do you think it is necessary to include the covariates?_
+
+
+#### d) _Histogram of the running variable_
+
+The running variable is skewed to the right. It seems that the population is avoiding the cutoff and choosing to be
+on its left side. This invalidates a sharp RDD design.
+
+We can also run RDDs on the controls with the intention to show that the table is balanced around the cutoff.
+```{r}
+ggplot(data = d2, mapping = aes(x = popnorm)) +
+  geom_histogram(bins = 30, fill = 'skyblue') +
+  geom_vline(aes(xintercept = 0), colour = 'black', linetype = 'dashed') +
+  ggtitle('Histogram of Population') +
+  xlab('Population') +
+  ylab('Count by bin') +
+  theme_light()
+```
+
+#### e)
+(i) What potential problems could there be with studies that exploit this kind of RDD set-ups? How have researchers dealt with this?
+
+
+(ii) One difficulty (but not one that one could not overcome!) is that there are multiple population thresholds. There are basically two ways researchers can deal with this- --what are these?
+
+
+(iii) Can you think of any population-based policies that would apply in the Mexican context?
+
